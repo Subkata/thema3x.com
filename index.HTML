@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sabin Nikolov - Matrix Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* --- СЛОЕВЕ --- */
+        canvas { position: absolute; top: 0; left: 0; }
+        #matrixCanvas { z-index: 0; }
+        #fireworksCanvas { z-index: 1; }
+
+        /* --- ВСТЪПИТЕЛЕН ЕКРАН (ХАПЧЕТАТА) --- */
+        #intro-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            background: rgba(0,0,0,0.85); /* Малко по-тъмно за контраст */
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        /* НОВИ СТИЛОВЕ ЗА ЗАГЛАВИЯТА В НАЧАЛОТО */
+        .matrix-title-container {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .matrix-title-glitch {
+            color: #0f0;
+            font-size: 3rem;
+            font-weight: bold;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            /* Използваме същата анимация като на бутона ENTER SYSTEM */
+            animation: bad-neon 0.15s infinite; 
+        }
+
+        .matrix-subtitle {
+            color: #0f0;
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px #0f0; /* Стабилно светене */
+        }
+        
+        /* Примигващ курсор в края на подзаглавието */
+        .cursor-blink {
+            animation: blinkCursor 0.7s steps(1) infinite;
+        }
+
+
+        /* --- ХАПЧЕТАТА --- */
+        .pills-container {
+            display: flex;
+            gap: 60px; /* Повече разстояние */
+        }
+
+        .pill {
+            padding: 20px 50px; /* По-големи бутони */
+            border-radius: 50px;
+            border: none;
+            font-size: 1.3rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ЧЕРВЕНОТО ХАПЧЕ */
+        .red-pill {
+            background: rgba(255, 0, 0, 0.1);
+            border: 3px solid #ff0000;
+            color: #ff0000;
+            box-shadow: 0 0 20px #ff0000, inset 0 0 10px #ff0000;
+        }
+        .red-pill:hover {
+            background: #ff0000;
+            color: black;
+            box-shadow: 0 0 60px #ff0000;
+            transform: scale(1.15);
+        }
+
+        /* СИНЬОТО ХАПЧЕ */
+        .blue-pill {
+            background: rgba(0, 89, 255, 0.1);
+            border: 3px solid #0059ff;
+            color: #0088ff;
+            box-shadow: 0 0 20px #0059ff, inset 0 0 10px #0059ff;
+        }
+        .blue-pill:hover {
+            background: #0059ff;
+            color: white;
+            box-shadow: 0 0 60px #0059ff;
+            transform: scale(1.15);
+        }
+
+
+        /* --- ОСНОВНО СЪДЪРЖАНИЕ (СКРИТО В НАЧАЛОТО) --- */
+        .content-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            pointer-events: none;
+            
+            opacity: 0; /* Скрито е */
+            visibility: hidden;
+            transition: opacity 2s ease; /* Бавно появяване */
+        }
+
+        /* Когато сложим този клас, сайтът се показва */
+        .content-visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto; /* Вече може да се клика */
+        }
+
+        /* --- КАРТАТА --- */
+        .card {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            padding: 40px;
+            border-radius: 10px;
+            border: 1px solid #0f0;
+            color: #0f0;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+            max-width: 500px;
+            pointer-events: auto;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 0 50px rgba(0, 255, 0, 0.4); }
+
+        h1 { margin: 0 0 10px 0; font-size: 2.5rem; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,255,0,0.8); }
+
+        #typewriter-text { 
+            color: #0f0; text-shadow: 0 0 5px rgba(0, 255, 0, 0.5); font-weight: bold; font-size: 1.1rem;
+            display: block; width: 39ch; margin: 0 auto 25px auto; text-align: left; white-space: nowrap;
+            overflow: hidden; height: 30px; line-height: 30px; border-right: 2px solid #0f0;
+            animation: blinkCursor 0.7s steps(1) infinite;
+        }
+        @keyframes blinkCursor { 50% { border-color: transparent; } }
+        
+        .status { display: inline-block; padding: 5px 15px; background: rgba(0, 255, 0, 0.1); color: #0f0; border-radius: 50px; font-size: 0.9rem; border: 1px solid #0f0; margin-bottom: 25px; box-shadow: 0 0 10px rgba(0,255,0,0.2); }
+
+        .social-buttons { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
+        .glass-btn { text-decoration: none; color: #0f0; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; border-radius: 50%; background: rgba(0, 255, 0, 0.05); border: 1px solid #0f0; font-size: 1.5rem; transition: all 0.3s ease; }
+        .glass-btn:hover { background: #0f0; color: #000; box-shadow: 0 0 20px #0f0; transform: scale(1.1); }
+
+        /* --- БУТОН ENTER SYSTEM --- */
+        .instruction {
+            border: none;
+            background: transparent;
+            text-decoration: none;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            padding: 10px;
+            text-transform: uppercase;
+            cursor: pointer;
+            min-width: 300px; 
+            min-height: 50px;
+        }
+        .instruction span { opacity: 0; transition: opacity 0.1s; }
+        .instruction:hover { text-shadow: 0 0 20px #0f0; }
+
+        .glitch-idle { animation: bad-neon 0.2s infinite; }
+        
+        /* ОБЩА АНИМАЦИЯ ЗА ЛОШ НЕОН (Ползва се и горе и долу) */
+        @keyframes bad-neon {
+            0% { opacity: 1; } 95% { opacity: 1; } 96% { opacity: 0.8; } 100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrixCanvas"></canvas>
+    <canvas id="fireworksCanvas"></canvas>
+
+    <div id="intro-layer">
+        <div class="matrix-title-container">
+            <div class="matrix-title-glitch">THE MATRIX HAS YOU...</div>
+            <div class="matrix-subtitle">> WILL YOU ENTER?<span class="cursor-blink">_</span></div>
+        </div>
+        
+        <div class="pills-container">
+            <button class="pill blue-pill" onclick="leaveMatrix()">BLUE PILL</button>
+            <button class="pill red-pill" onclick="enterMatrix()">RED PILL</button>
+        </div>
+    </div>
+
+    <div class="content-layer" id="main-content">
+        <div class="card">
+            <h1>SABIN NIKOLOV</h1>
+            <p id="typewriter-text"></p>
+            <div class="status">● LEARNING MODE: 11%</div>
+            
+            <div class="social-buttons">
+                <a href="https://github.com/" target="_blank" class="glass-btn"><i class="fab fa-github"></i></a>
+                <a href="https://linkedin.com/" target="_blank" class="glass-btn"><i class="fab fa-linkedin-in"></i></a>
+                <a href="mailto:email@example.com" class="glass-btn"><i class="fas fa-envelope"></i></a>
+            </div>
+
+            <a href="#" class="instruction" id="hacker-btn">
+                [ WELCOME ]
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // === ЛОГИКА ЗА ХАПЧЕТАТА ===
+        function leaveMatrix() {
+            window.location.href = "https://www.google.com";
+        }
+
+        function enterMatrix() {
+            const intro = document.getElementById('intro-layer');
+            // Използваме visibility: hidden за да сме сигурни, че не пречи на мишката после
+            intro.style.opacity = '0';
+            intro.style.visibility = 'hidden';
+            
+            // Показваме портфолиото
+            const content = document.getElementById('main-content');
+            content.classList.add('content-visible');
+
+            // Стартираме ефектите със закъснение
+            setTimeout(() => {
+                typeWriter();
+                runGlitchLoop();
+            }, 800); // Малко по-дълго закъснение за драматизъм
+        }
+
+        // === STANDARD CANVAS EFFECTS ===
+        const mCanvas = document.getElementById('matrixCanvas');
+        const mCtx = mCanvas.getContext('2d');
+        let w, h, columns, drops = [];
+        const matrixChars = "01XYZEABΓSΞW"; const fontSize = 14;
+        function initMatrix() { w = mCanvas.width = window.innerWidth; h = mCanvas.height = window.innerHeight; columns = Math.floor(w / fontSize); drops = []; for(let x = 0; x < columns; x++) drops[x] = 1; }
+        function drawMatrix() { mCtx.fillStyle = "rgba(0, 0, 0, 0.05)"; mCtx.fillRect(0, 0, w, h); mCtx.fillStyle = "#0f0"; mCtx.font = fontSize + "px monospace"; for(let i = 0; i < drops.length; i++) { const text = matrixChars.charAt(Math.floor(Math.random() * matrixChars.length)); mCtx.fillText(text, i*fontSize, drops[i]*fontSize); if(drops[i]*fontSize > h && Math.random() > 0.975) drops[i] = 0; drops[i]++; } }
+
+        const fCanvas = document.getElementById('fireworksCanvas');
+        const fCtx = fCanvas.getContext('2d');
+        const particlesArray = [];
+        let hue = 0;
+        const mouse = { x: undefined, y: undefined };
+        window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; addParticles(2, false); });
+        window.addEventListener('click', (e) => { mouse.x = e.x; mouse.y = e.y; addParticles(40, true); });
+        window.addEventListener('touchstart', (e) => { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; addParticles(40, true); });
+        window.addEventListener('touchmove', (e) => { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; addParticles(2, false); });
+        class Particle { constructor(isExplosion){ this.x = mouse.x; this.y = mouse.y; this.size = Math.random() * 8 + 2; let speed = isExplosion ? 8 : 2; this.speedX = Math.random() * speed - speed/2; this.speedY = Math.random() * speed - speed/2; this.color = 'hsl(' + hue + ', 100%, 50%)'; this.gravity = 0.1; } update(){ this.speedY += this.gravity; this.x += this.speedX; this.y += this.speedY; if(this.size > 0.1) this.size -= 0.1; } draw(){ fCtx.fillStyle = this.color; fCtx.shadowBlur = 5; fCtx.shadowColor = this.color; fCtx.beginPath(); fCtx.arc(this.x, this.y, this.size > 0 ? this.size : 0, 0, Math.PI * 2); fCtx.fill(); fCtx.shadowBlur = 0; } }
+        function addParticles(amount, isExplosion){ for(let i=0; i<amount; i++) particlesArray.push(new Particle(isExplosion)); }
+        function animateFireworks() { fCtx.globalCompositeOperation = 'destination-out'; fCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; fCtx.fillRect(0, 0, fCanvas.width, fCanvas.height); fCtx.globalCompositeOperation = 'source-over'; for (let i = 0; i < particlesArray.length; i++){ particlesArray[i].update(); particlesArray[i].draw(); if (particlesArray[i].size <= 0.3){ particlesArray.splice(i, 1); i--; } } hue += 2; }
+
+        // === ТЕКСТ ЕФЕКТИТЕ ===
+        const textToType = "JavaScript Enthusiast & Creative Coder";
+        const typeWriterElement = document.getElementById('typewriter-text');
+        let charIndex = 0;
+        function typeWriter() { if (charIndex < textToType.length) { typeWriterElement.textContent += textToType.charAt(charIndex); charIndex++; setTimeout(typeWriter, 100); } else { typeWriterElement.style.borderRight = "none"; } }
+
+        const btn = document.getElementById('hacker-btn');
+        const fullText = " WELCOME ";
+        btn.innerHTML = ''; 
+        fullText.split('').forEach(char => { let span = document.createElement('span'); span.textContent = char; btn.appendChild(span); });
+        const letterSpans = btn.querySelectorAll('span');
+
+        function runGlitchLoop() {
+            btn.classList.remove('glitch-idle');
+            let chaosDuration = 2000;
+            let chaosInterval = setInterval(() => { letterSpans.forEach(span => { span.style.opacity = Math.random() > 0.6 ? 1 : 0; }); }, 80);
+            setTimeout(() => {
+                clearInterval(chaosInterval);
+                letterSpans.forEach(span => span.style.opacity = 1);
+                btn.classList.add('glitch-idle');
+                setTimeout(() => { letterSpans.forEach(span => span.style.opacity = 0); runGlitchLoop(); }, 3000); 
+            }, chaosDuration);
+        }
+
+        initMatrix(); 
+        fCanvas.width = window.innerWidth; fCanvas.height = window.innerHeight; 
+        function animateAll() { drawMatrix(); animateFireworks(); requestAnimationFrame(animateAll); }
+        animateAll();
+        window.addEventListener('resize', () => { initMatrix(); fCanvas.width = window.innerWidth; fCanvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>
